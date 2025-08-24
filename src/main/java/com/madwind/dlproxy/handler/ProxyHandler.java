@@ -33,10 +33,10 @@ import java.util.Map;
 
 @Component
 public class ProxyHandler {
-    Logger logger = LoggerFactory.getLogger(ProxyHandler.class);
-    WebClient webClient;
     final List<String> IGNORE_HEADERS = Arrays.asList("host", "origin", "referer", "cdn-loop", "cf-", "x-");
     final TsStartTimeService tsStartTimeService;
+    Logger logger = LoggerFactory.getLogger(ProxyHandler.class);
+    WebClient webClient;
 
     public ProxyHandler(WebClient.Builder webClientBuilder, TsStartTimeService tsStartTimeService) throws SSLException {
         this.tsStartTimeService = tsStartTimeService;
@@ -91,8 +91,24 @@ public class ProxyHandler {
             }
             return ServerResponse.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .bodyValue(throwable.getMessage());
-        }).doOnNext(serverResponse -> logger.info("proxy: {}, size: {}", urlParam, serverResponse.headers()
-                .get(HttpHeaders.CONTENT_LENGTH)));
+        }).doOnNext(serverResponse -> {
+            String contentLength = serverResponse.headers().getFirst(HttpHeaders.CONTENT_LENGTH);
+
+            if (contentLength == null) {
+                // 打印请求头（ServerRequest 的原始头）
+                logger.info("ServerRequest headers:");
+                serverRequest.headers().asHttpHeaders().forEach((key, values) ->
+                        logger.info("{}: {}", key, values)
+                );
+
+                // 如果你还有自定义的 httpHeaders，也可以打印
+                logger.info("Custom headers for proxy request:");
+                httpHeaders.forEach((key, values) ->
+                        logger.info("{}: {}", key, values)
+                );
+            }
+            logger.info("proxy: {}, size: {}", urlParam, contentLength);
+        });
     }
 
     private HttpHeaders buildRequestHeader(ServerRequest serverRequest, String urlParam) {
