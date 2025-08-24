@@ -93,20 +93,6 @@ public class ProxyHandler {
                     .bodyValue(throwable.getMessage());
         }).doOnNext(serverResponse -> {
             String contentLength = serverResponse.headers().getFirst(HttpHeaders.CONTENT_LENGTH);
-
-            if (contentLength == null) {
-                // 打印请求头（ServerRequest 的原始头）
-                logger.info("ServerRequest headers:");
-                serverRequest.headers().asHttpHeaders().forEach((key, values) ->
-                        logger.info("{}: {}", key, values)
-                );
-
-                // 如果你还有自定义的 httpHeaders，也可以打印
-                logger.info("Custom headers for proxy request:");
-                httpHeaders.forEach((key, values) ->
-                        logger.info("{}: {}", key, values)
-                );
-            }
             logger.info("proxy: {}, size: {}", urlParam, contentLength);
         });
     }
