@@ -1,7 +1,7 @@
 package com.madwind.dlproxy.handler;
 
-import com.madwind.dlproxy.service.TsStartTimeService;
 import com.madwind.dlproxy.proxy.Common;
+import com.madwind.dlproxy.service.TsStartTimeService;
 import io.netty.channel.ChannelOption;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
@@ -101,14 +101,21 @@ public class ProxyHandler {
         try {
             String host = new URI(urlParam).getHost();
             HttpHeaders httpHeaders = new HttpHeaders();
-            HttpHeaders requestHeaders = serverRequest.headers().asHttpHeaders();
-            requestHeaders.forEach((s, strings) -> {
-                String s1 = s.toLowerCase();
-                if (IGNORE_HEADERS.stream().noneMatch(s1::startsWith)) {
-                    httpHeaders.addAll(s, strings);
+
+            serverRequest.headers().asHttpHeaders().forEach((key, values) -> {
+                String keyLower = key.toLowerCase();
+
+                boolean shouldIgnore = IGNORE_HEADERS.stream().anyMatch(keyLower::startsWith);
+                if (shouldIgnore) return;
+
+                if ("ranges".equalsIgnoreCase(key)) {
+                    httpHeaders.addAll("Range", values);
+                } else {
+                    httpHeaders.addAll(key, values);
                 }
             });
-            httpHeaders.add("Host", host);
+
+            httpHeaders.set("Host", host);
             return httpHeaders;
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
