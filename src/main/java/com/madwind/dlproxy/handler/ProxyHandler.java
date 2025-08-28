@@ -27,13 +27,12 @@ import javax.net.ssl.SSLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
 @Component
 public class ProxyHandler {
-    final List<String> IGNORE_HEADERS = Arrays.asList("host", "origin", "referer", "cdn-loop", "cf-", "x-");
+    final List<String> IGNORE_HEADERS = List.of("host", "origin", "referer", "cdn-loop", "cf-", "x-");
     final TsStartTimeService tsStartTimeService;
     Logger logger = LoggerFactory.getLogger(ProxyHandler.class);
     WebClient webClient;
@@ -106,13 +105,10 @@ public class ProxyHandler {
                 String keyLower = key.toLowerCase();
 
                 boolean shouldIgnore = IGNORE_HEADERS.stream().anyMatch(keyLower::startsWith);
-                if (shouldIgnore) return;
-
-                if ("ranges".equalsIgnoreCase(key)) {
-                    httpHeaders.addAll("Range", values);
-                } else {
-                    httpHeaders.addAll(key, values);
+                if (shouldIgnore) {
+                    return;
                 }
+                httpHeaders.addAll(key, values);
             });
 
             httpHeaders.set("Host", host);
